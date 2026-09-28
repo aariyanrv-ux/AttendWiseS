@@ -1,0 +1,16 @@
+[
+  {"name":"I ECE-A","weekly_classes":33,"semester_classes":429},
+  {"name":"I ECE-B","weekly_classes":33,"semester_classes":429},
+  {"name":"I EEE","weekly_classes":33,"semester_classes":429},
+  {"name":"I ECE-DS","weekly_classes":33,"semester_classes":429},
+  {"name":"I Biotech-B / Biomedical","weekly_classes":36,"semester_classes":468},
+  {"name":"II BME","weekly_classes":28,"semester_classes":364},
+  {"name":"II ECE-DS A","weekly_classes":29,"semester_classes":377},
+  {"name":"II ECE-DS B","weekly_classes":29,"semester_classes":377},
+  {"name":"III BME","weekly_classes":30,"semester_classes":390},
+  {"name":"III ECE-A","weekly_classes":27,"semester_classes":351},
+  {"name":"III ECE-B","weekly_classes":28,"semester_classes":364},
+  {"name":"III ECE-DS","weekly_classes":27,"semester_classes":351},
+  {"name":"IV ECE-A","weekly_classes":19,"semester_classes":247},
+  {"name":"IV ECE-B","weekly_classes":19,"semester_classes":247}
+]

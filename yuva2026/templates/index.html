@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f5f1">
+  <title>AttendWise | Attendance planner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js" defer></script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="/" aria-label="AttendWise home"><span class="mark">A</span> AttendWise</a>
+    <div class="top-meta"><span class="term-tag">ODD SEMESTER · 2026–27</span><span id="today-label"></span></div>
+  </header>
+
+  <main class="page-shell">
+    <section class="page-heading">
+      <div>
+        <p class="eyebrow">ATTENDANCE PLANNER</p>
+        <h1>Stay ahead of the register.</h1>
+        <p class="lede">Know what to attend next, by subject and by date.</p>
+      </div>
+    </section>
+
+    <section class="planner-bar" aria-label="Plan settings">
+      <label class="field"><span>Class section</span>
+        <select id="section-select"><option value="">Choose a section</option></select>
+      </label>
+      <label class="field"><span>Plan through</span>
+        <input id="planning-date" type="date" min="2026-09-28" max="2026-11-29">
+      </label>
+      <div id="connection-state" class="connection-state"><span class="connection-dot"></span><span>Checking saved sections</span></div>
+    </section>
+
+    <section id="manual-calculator" class="manual-calculator" hidden>
+      <div class="leave-heading"><div><p class="eyebrow">SECTION CALCULATOR</p><h2 id="manual-section-title">Attendance estimate</h2></div><p>Enter your current percentage for a date-based recovery estimate.</p></div>
+      <div class="manual-controls">
+        <label class="field"><span>Current attendance (%)</span><input id="manual-percent" type="number" min="0" max="100" step="0.01" placeholder="e.g. 72.5"></label>
+        <button id="manual-calculate" class="button button-primary" type="button">Calculate</button>
+      </div>
+      <p class="manual-hint">Uses the processed dataset's weekly classes for this section. Date-range counts are estimates distributed evenly across Monday–Friday; Saturday/Sunday are excluded. Subject/day-level attendance is not present in this dataset.</p>
+      <div id="manual-result" class="manual-result" hidden aria-live="polite">
+        <strong id="manual-primary"></strong>
+        <span id="manual-detail"></span>
+        <div class="manual-health" aria-label="Overall attendance health chart">
+          <div class="manual-health-label"><span>OVERALL ATTENDANCE</span><b id="manual-health-value">—</b></div>
+          <div class="manual-health-track" role="meter" aria-label="Current attendance percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="manual-health-bar"></span><i class="threshold-75"></i><i class="threshold-90"></i></div>
+          <div class="manual-health-scale"><span>0%</span><span>75% danger line</span><span>90%</span><span>100%</span></div>
+        </div>
+        <fieldset class="manual-leave">
+          <legend>OD / medical leave simulator</legend>
+          <div class="manual-leave-controls">
+            <label class="field"><span>Leave type</span><select id="manual-leave-type"><option value="none">No leave · current attendance</option><option value="od">On-duty · counted attended</option></select></label>
+            <label class="field"><span>Starts</span><input id="manual-leave-start" type="date"></label>
+            <label class="field"><span>Calendar days</span><input id="manual-leave-days" type="number" min="1" max="31" value="3"></label>
+            <output id="manual-leave-result" aria-live="polite">Enter a percentage to simulate leave.</output>
+          </div>
+        </fieldset>
+        <div id="manual-alert" class="detention-alert" role="alert" hidden><span class="alert-icon" aria-hidden="true">!</span><div><strong>Irreversible Detention</strong><p id="manual-alert-copy"></p></div></div>
+      </div>
+    </section>
+
+    <section id="source-note" class="source-note" hidden></section>
+    <section id="detention-alert" class="detention-alert" role="alert" hidden>
+      <span class="alert-icon" aria-hidden="true">!</span>
+      <div><strong>Irreversible Detention</strong><p id="detention-copy"></p></div>
+    </section>
+
+    <section id="dashboard" hidden>
+      <section class="summary-strip" aria-label="Attendance summary">
+        <article class="summary-item"><span class="summary-label">CLASSES LEFT</span><strong id="sum-remaining">—</strong><span class="summary-foot">scheduled this semester</span></article>
+        <article class="summary-item"><span class="summary-label">TO PROTECT 75%</span><strong id="sum-75">—</strong><span class="summary-foot">subject classes to attend</span></article>
+        <article class="summary-item"><span class="summary-label">TO REACH 90%</span><strong id="sum-90">—</strong><span class="summary-foot">subject classes to attend</span></article>
+        <article class="summary-item summary-risk"><span class="summary-label">AT RISK</span><strong id="sum-risk">—</strong><span class="summary-foot">subjects below 90%</span></article>
+      </section>
+
+      <section class="leave-panel" aria-labelledby="leave-title">
+        <div class="leave-heading"><div><p class="eyebrow">PLAN AN ABSENCE</p><h2 id="leave-title">OD &amp; medical leave simulator</h2></div><p>Projection assumes you attend every other remaining class.</p></div>
+        <div class="leave-controls">
+          <label class="field"><span>Subject</span><select id="leave-subject"></select></label>
+          <label class="field"><span>Leave type</span><select id="leave-type"><option value="od">On-duty · counted attended</option></select></label>
+          <label class="field"><span>Starts</span><input id="leave-start" type="date"></label>
+          <label class="field"><span>Calendar days</span><input id="leave-days" type="number" min="1" max="31" value="3"></label>
+          <output id="leave-result" class="leave-result" aria-live="polite">Choose a verified section to calculate leave impact.</output>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="subject-panel">
+          <div class="section-title-row">
+            <div><p class="eyebrow">SUBJECT BREAKDOWN</p><h2 id="section-title">Your subjects</h2></div>
+            <span id="planning-caption" class="muted-copy"></span>
+          </div>
+          <div id="subjects-list" class="subjects-list"></div>
+        </div>
+        <aside class="side-panel">
+          <div class="overall-health"><div><p class="eyebrow">WEIGHTED OVERALL</p><strong id="overall-percent">—</strong></div><div class="overall-track"><span id="overall-bar"></span></div><span id="overall-counts">Across all conducted class units</span></div>
+          <div class="side-heading"><div><p class="eyebrow">SEMESTER OUTLOOK</p><h2>Subject risk mix</h2></div></div>
+          <div class="chart-wrap"><canvas id="risk-chart" aria-label="Subjects by attendance risk"></canvas><div id="chart-fallback" class="chart-fallback" hidden></div></div>
+          <div class="legend"><span><i class="legend-dot safe"></i>Safe ≥90%</span><span><i class="legend-dot warning"></i>Warning ≥75%</span><span><i class="legend-dot critical"></i>Critical &lt;75%</span></div>
+          <div class="advisor" id="advisor"><span class="advisor-mark" aria-hidden="true">i</span><p>Select a section to get a subject-by-subject attendance plan.</p></div>
+        </aside>
+      </section>
+      <p class="calculation-note">Recovery assumes attendance at every future class until the target is reached. Timetable entries are not treated as attended history.</p>
+    </section>
+
+    <section id="empty-state" class="empty-state">
+      <div class="empty-rule"></div>
+      <p class="eyebrow">NO VERIFIED SECTION LOADED</p>
+      <h2>Start with your section and attendance totals.</h2>
+      <p>Timetable PDFs are image-based and need manual verification before their subjects and class dates can be trusted. Select a processed section to calculate from its class totals.</p>
+    </section>
+
+    <footer class="page-footer"><span>Semester dates · Aug 29 – Nov 29, 2026</span><span id="offline-label">Calculations run in your browser when offline.</span></footer>
+  </main>
+  <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" aria-controls="advisor-chat"><span aria-hidden="true">✳</span> Attendance Advisor</button>
+  <section id="advisor-chat" class="advisor-chat" aria-label="Attendance Advisor" hidden>
+    <div class="chat-heading"><div><p class="eyebrow">LOCAL CALCULATOR</p><h2>Attendance Advisor</h2></div><button id="chat-close" class="chat-close" type="button" aria-label="Close advisor">×</button></div>
+    <div id="chat-log" class="chat-log" aria-live="polite"><p class="chat-message bot">Ask about a subject, a leave duration, or a 75% / 90% target. I’ll use the loaded section’s schedule and exact attendance math.</p></div>
+    <form id="chat-form" class="chat-form"><label class="sr-only" for="chat-input">Ask about your attendance</label><input id="chat-input" type="text" autocomplete="off" placeholder="e.g. 3-day sick leave for Chemistry tomorrow" required><button type="submit" aria-label="Send question">Send</button></form>
+    <p class="chat-disclaimer">Deterministic advice · no external AI or data sharing</p>
+  </section>
+  <dialog id="manual-alert-dialog" class="detention-modal" aria-labelledby="manual-dialog-title">
+    <div class="detention-modal-mark" aria-hidden="true">!</div>
+    <p class="eyebrow">ATTENDANCE STATUS</p>
+    <h2 id="manual-dialog-title">IRREVERSIBLE DETENTION</h2>
+    <p id="manual-dialog-copy"></p>
+    <button id="manual-dialog-close" class="button" type="button">I understand</button>
+  </dialog>
+</body>
+</html>
